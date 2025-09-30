@@ -1,0 +1,10 @@
+!private/
+!public/
+!.gitignore
+/storage/*.key
+/.idea
+/.vscode
+/.DS_Store
+/vendor
+/node_modules
+.env
