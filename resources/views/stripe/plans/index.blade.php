@@ -26,11 +26,9 @@
                                         Amount
                                     </th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Interval
+                                        Billing Method
                                     </th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
+                                  
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                         Actions
                                     </th>
@@ -46,34 +44,26 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">
-                                                ${{ number_format($plan->amount / 100, 2) }}
+                                                ${{ number_format($plan->price / 100, 2) }}
                                             </div>
                                         </td>
+                                       
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <div class="text-sm text-gray-900">
-                                                {{ $plan->interval_count }} {{ Str::plural($plan->billing_period, $plan->interval_count) }}
+                                                {{ $plan->billing_method }} 
                                             </div>
                                         </td>
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $plan->active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
-                                                {{ $plan->active ? 'Active' : 'Inactive' }}
-                                            </span>
-                                        </td>
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                            <a href="{{ route('plans.edit', $plan->id) }}" class="text-indigo-600 hover:text-indigo-900 mr-3">Edit</a>
-                                            <form action="{{ route('plans.destroy', $plan->id) }}" method="POST" class="inline">
-                                                @csrf
-                                                @method('DELETE')
-                                                <button type="submit" class="text-red-600 hover:text-red-900" onclick="return confirm('Are you sure you want to delete this plan?')">
-                                                    Delete
-                                                </button>
-                                            </form>
-                                        </td>
+                                        
+                                      
                                     </tr>
                                 @empty
                                     <tr>
                                         <td colspan="5" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
                                             No plans found
+                                        </td><td class="px-6 py-4 whitespace-nowrap">
+                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $plan->active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800' }}">
+                                                {{ $plan->active ? 'Active' : 'Inactive' }}
+                                            </span>
                                         </td>
                                     </tr>
                                 @endforelse

@@ -21,6 +21,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/single-charge', [SubscriptionController::class,'singleCharge'])->name('single.charge');
     Route::get('/plans', [SubscriptionController::class,'listPlan'])->name('plans.index');
     Route::get('/plans/create-plan', [SubscriptionController::class,'createPlan'])->name('plans.create');
+    Route::post('/plans/store-plan', [SubscriptionController::class,'storePlan'])->name('plans.store');
     
     // Route::get('/subscribe', 'SubscriptionController@showSubscription');
     //   Route::post('/subscribe', 'SubscriptionController@processSubscription');

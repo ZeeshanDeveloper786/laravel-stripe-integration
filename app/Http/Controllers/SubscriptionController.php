@@ -40,6 +40,48 @@ class SubscriptionController extends Controller
         return view('stripe.plans.create');
     }
 
+    public function storePlan(Request $request) {
+        $request->validate([
+            'plan_name' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:1',
+            'currency' => 'required|string|size:3',
+            'interval_count' => 'nullable|integer|min:1',
+            'billing_period' => 'required|in:day,week,month,year',
+        ]);
+        
+        
+        try {
+            Stripe::setApiKey(config('services.stripe.secret'));
+
+            // Create the product
+            $product = \Stripe\Product::create([
+                'name' => $request->plan_name,
+            ]);
+
+            // Create the plan
+            $plan = \Stripe\Plan::create([
+                'amount' => $request->amount * 100, // amount in cents
+                'currency' => $request->currency,
+                'interval' => $request->billing_period,
+                'product' => $product->id,
+            ]);
+
+            // Store plan details in your database
+            Plan::create([
+                'stripe_plan_id' => $plan->id,
+                'name' => $plan->product,
+                'price' => $plan->amount,
+                'billing_method' => $plan->interval,
+                'currency' => $plan->currency,
+            ]);
+
+        } catch (\Exception $e) {
+            throw $e;
+        }
+        return redirect()->route('plans.index')->with('success', 'Plan created successfully.'); 
+
+    }
+
 //      public function retrievePlans() {
 //        $key = \config('services.stripe.secret');
 //        $stripe = new \Stripe\StripeClient($key);

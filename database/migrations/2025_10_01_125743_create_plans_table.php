@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('plans', function (Blueprint $table) {
             $table->id();
-            $table->integer('stripe_plan_id');
+            $table->string('stripe_plan_id');
             $table->string('name');
             $table->string('billing_method'); // per seat, per user
             $table->string('description')->nullable();

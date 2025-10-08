@@ -10,7 +10,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 text-gray-900">
-                    <form action="/plans" method="POST" class="space-y-6">
+                    <form action="{{ route('plans.store') }}" method="POST" class="space-y-6">
                         @csrf
                         <!-- Plan Name -->
                         <div class="space-y-2">
@@ -22,25 +22,40 @@
                                 id="plan_name" 
                                 name="plan_name" 
                                 placeholder="Enter plan name" 
-                                required>
+                                >
                         </div>
 
-                        <!-- Amount Currency -->
+                        <!-- Amount -->
                         <div class="space-y-2">
-                            <label for="amount_currency" class="block text-sm font-medium text-gray-700">
-                                Amount Currency
+                            <label for="amount" class="block text-sm font-medium text-gray-700">
+                                Amount
                             </label>
-                            <div class="mt-1 flex rounded-md shadow-sm">
-                                <span class="inline-flex items-center rounded-l-md border border-r-0 border-gray-300 bg-gray-50 px-3 text-gray-500 sm:text-sm">
-                                    $
-                                </span>
-                                <input type="number" 
-                                    class="block w-full rounded-none rounded-r-md border-gray-300 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
-                                    id="amount_currency" 
-                                    name="amount_currency" 
-                                    placeholder="Enter amount" 
-                                    required>
-                            </div>
+                            <input type="number" 
+                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                id="amount" 
+                                name="amount" 
+                                placeholder="Enter amount" 
+                                >
+                        </div>
+
+                        <!-- Currency -->
+                        <div class="space-y-2">
+                            <label for="currency" class="block text-sm font-medium text-gray-700">
+                                Currency
+                            </label>
+                            <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
+                                id="currency" 
+                                name="currency" 
+                                >
+                                <option value="" disabled selected>Select currency</option>
+                                <option value="usd">USD ($)</option>
+                                <option value="eur">EUR (€)</option>
+                                <option value="gbp">GBP (£)</option>
+                                <option value="cad">CAD (C$)</option>
+                                <option value="aud">AUD (A$)</option>
+                                <option value="jpy">JPY (¥)</option>
+                                <option value="inr">INR (₹)</option>
+                            </select>
                         </div>
 
                         <!-- Interval Count -->
@@ -53,7 +68,7 @@
                                 id="interval_count" 
                                 name="interval_count" 
                                 placeholder="Enter interval count" 
-                                required>
+                                >
                         </div>
 
                         <!-- Billing Period -->
@@ -64,7 +79,7 @@
                             <select class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
                                 id="billing_period" 
                                 name="billing_period" 
-                                required>
+                                >
                                 <option value="" disabled selected>Select billing period</option>
                                 <option value="week">Week</option>
                                 <option value="month">Month</option>
