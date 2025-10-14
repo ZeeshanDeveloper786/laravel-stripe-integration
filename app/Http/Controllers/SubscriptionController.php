@@ -43,7 +43,7 @@ class SubscriptionController extends Controller
     public function storePlan(Request $request) {
         $request->validate([
             'plan_name' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric',
             'currency' => 'required|string|size:3',
             'interval_count' => 'nullable|integer|min:1',
             'billing_period' => 'required|in:day,week,month,year',
@@ -64,15 +64,17 @@ class SubscriptionController extends Controller
                 'currency' => $request->currency,
                 'interval' => $request->billing_period,
                 'product' => $product->id,
+                'interval_count' => $request->interval_count
             ]);
 
             // Store plan details in your database
             Plan::create([
                 'stripe_plan_id' => $plan->id,
-                'name' => $plan->product,
+                'name' => $request->plan_name,
                 'price' => $plan->amount,
                 'billing_method' => $plan->interval,
                 'currency' => $plan->currency,
+                'interval_count' => $plan->interval_count
             ]);
 
         } catch (\Exception $e) {
@@ -80,6 +82,10 @@ class SubscriptionController extends Controller
         }
         return redirect()->route('plans.index')->with('success', 'Plan created successfully.'); 
 
+    }
+
+    public function checkout($stripe_plan_id) {
+        
     }
 
 //      public function retrievePlans() {
