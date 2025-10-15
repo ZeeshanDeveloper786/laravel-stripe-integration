@@ -22,7 +22,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/plans', [SubscriptionController::class,'listPlan'])->name('plans.index');
     Route::get('/plans/create-plan', [SubscriptionController::class,'createPlan'])->name('plans.create');
     Route::post('/plans/store-plan', [SubscriptionController::class,'storePlan'])->name('plans.store');
-    Route::post('/plans/checkout/{stipe_plan_id}', [SubscriptionController::class,'checkout'])->name('plans.checkout');
+    Route::get('/plans/checkout/{stipe_plan_id}', [SubscriptionController::class,'checkout'])->name('plans.checkout');
+    Route::post('/plans/process-checkout', [SubscriptionController::class,'processCheckout'])->name('plans.process-checkout');
     
     // Route::get('/subscribe', 'SubscriptionController@showSubscription');
     //   Route::post('/subscribe', 'SubscriptionController@processSubscription');

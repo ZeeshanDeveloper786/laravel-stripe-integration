@@ -85,7 +85,36 @@ class SubscriptionController extends Controller
     }
 
     public function checkout($stripe_plan_id) {
+        $plan = Plan::where('stripe_plan_id', $stripe_plan_id)->first();
+        if(!$plan) {
+            return back()->withErrors(['message' => 'Plan not found.']);
+        }
+
         
+        
+        return view('stripe.plans.checkout', [
+            'intent' => auth()->user()->createSetupIntent(),
+            'plan' => $plan,
+        ]);
+    }
+
+    public function processCheckout(Request $request) {             
+        
+        try {
+            $user = Auth::user();
+            $user->createOrGetStripeCustomer();
+            if(isset($request->payment_method)){
+                $payment_method =$user->addPaymentMethod($request->payment_method);
+            }
+
+            $user->newSubscription('default', $request->stripe_plan_id)->create($payment_method ? $payment_method->id : null);
+
+        } catch (\Exception $e) {
+            return back()->withErrors(['message' => 'Error creating subscription. ' . $e->getMessage()]);
+        }
+
+        
+        return back()->with('success', 'Subscription created successfully');
     }
 
 //      public function retrievePlans() {
