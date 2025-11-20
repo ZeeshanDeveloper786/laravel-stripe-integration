@@ -159,4 +159,11 @@ class SubscriptionController extends Controller
        
 //        return redirect('dashboard');
 //    }
+
+    public function userSubscriptions() {
+        $user = auth()->user();
+        $subscriptions = $user->subscriptions()->with('plan')->get();                     
+        
+        return view('stripe.subscriptions.index', compact('subscriptions'));
+    }
 }
