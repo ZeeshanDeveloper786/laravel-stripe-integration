@@ -166,4 +166,72 @@ class SubscriptionController extends Controller
         
         return view('stripe.subscriptions.index', compact('subscriptions'));
     }
+
+    public function cancelSubscription(Request $request, $subscriptionId) {
+        try {
+            $subscription = auth()->user()->subscriptions()->find($subscriptionId);
+            
+            if (!$subscription) {
+                return $this->jsonError('Subscription not found.', 404);
+            }
+            
+            if (!$subscription->active()) {
+                return $this->jsonError('Subscription is not active.', 400);
+            }
+
+            $subscription->cancel();
+            $subscription->refresh();
+
+            return $request->expectsJson() 
+                ? response()->json([
+                    'success' => true,
+                    'message' => 'Subscription canceled successfully. It will remain active until the end of the billing period.',
+                    'subscription' => [
+                        'stripe_status' => $subscription->stripe_status,
+                        'ends_at' => $subscription->ends_at?->format('M d, Y'),
+                        'is_active' => false, // Show resume button after cancel
+                    ]
+                ])
+                : back()->with('success', 'Subscription canceled successfully.');
+        } catch (\Exception $e) {
+            return $this->jsonError('Error canceling subscription: ' . $e->getMessage(), 500);
+        }
+    }
+
+    public function resumeSubscription(Request $request, $subscriptionId) {
+        try {
+            $subscription = auth()->user()->subscriptions()->find($subscriptionId);
+            
+            if (!$subscription) {
+                return $this->jsonError('Subscription not found.', 404);
+            }
+            
+            if (!$subscription->canceled()) {
+                return $this->jsonError('Subscription is not canceled.', 400);
+            }
+
+            $subscription->resume();
+            $subscription->refresh();
+
+            return $request->expectsJson() 
+                ? response()->json([
+                    'success' => true,
+                    'message' => 'Subscription resumed successfully.',
+                    'subscription' => [
+                        'stripe_status' => $subscription->stripe_status,
+                        'ends_at' => $subscription->ends_at?->format('M d, Y'),
+                        'is_active' => $subscription->active(),
+                    ]
+                ])
+                : back()->with('success', 'Subscription resumed successfully.');
+        } catch (\Exception $e) {
+            return $this->jsonError('Error resuming subscription: ' . $e->getMessage(), 500);
+        }
+    }
+
+    private function jsonError($message, $code = 400) {
+        return request()->expectsJson() 
+            ? response()->json(['success' => false, 'message' => $message], $code)
+            : back()->withErrors(['message' => $message]);
+    }
 }

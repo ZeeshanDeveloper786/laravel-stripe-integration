@@ -13,6 +13,52 @@
 
     <div class="py-12">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+            <!-- Dynamic Flash Messages Container -->
+            <div id="flash-messages"></div>
+
+            <!-- Success Message -->
+            @if (session('success'))
+                <div class="mb-6 bg-green-50 border border-green-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-green-800">
+                                {{ session('success') }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <!-- Error Messages -->
+            @if ($errors->any())
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                Error
+                            </h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                <ul class="list-disc pl-5 space-y-1">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
             @if($subscriptions->count() > 0)
                 <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                     <div class="p-6 text-gray-900">
@@ -46,7 +92,7 @@
                                 <tbody class="bg-white divide-y divide-gray-200">
                                     @foreach($subscriptions as $subscription)
 
-                                        <tr class="hover:bg-gray-50">
+                                        <tr class="hover:bg-gray-50" data-subscription-id="{{ $subscription->id }}">
                                             <td class="px-6 py-4 whitespace-nowrap">
                                                 <div class="text-sm font-medium text-gray-900">
                                                     {{ $subscription->plan->name ?? $subscription->name ?? 'Unknown Plan' }}
@@ -71,7 +117,7 @@
                                                     ];
                                                     $statusColor = $statusColors[$subscription->stripe_status] ?? 'bg-gray-100 text-gray-800';
                                                 @endphp
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
+                                                <span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
                                                     {{ ucfirst(str_replace('_', ' ', $subscription->stripe_status)) }}
                                                 </span>
                                             </td>
@@ -83,7 +129,7 @@
                                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                                 {{ ucfirst($subscription->plan->billing_method) }}
                                             </td>
-                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 next-billing-date">
                                                 @php
                                                     if($subscription->canceled() && $subscription->ends_at) {
                                                         // If canceled, show when it ends
@@ -105,14 +151,16 @@
                                                 @endif
                                             </td>
                                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                <div class="flex space-x-2">
-                                                    @if($subscription->active())
-                                                        <button class="text-red-600 hover:text-red-900" onclick="cancelSubscription('{{ $subscription->id }}')">
-                                                            Cancel
-                                                        </button>
-                                                    @elseif($subscription->canceled())
-                                                        <button class="text-indigo-600 hover:text-indigo-900" onclick="resumeSubscription('{{ $subscription->id }}')">
+                                                <div class="flex space-x-2 subscription-actions">
+                                                    
+                                                        
+                                                    @if($subscription->canceled())
+                                                        <button class="text-indigo-600 hover:text-indigo-900" onclick="resumeSubscription(event, '{{ $subscription->id }}')">
                                                             Resume
+                                                        </button>
+                                                    @else
+                                                        <button class="text-red-600 hover:text-red-900" onclick="cancelSubscription(event, '{{ $subscription->id }}')">
+                                                            Cancel
                                                         </button>
                                                     @endif
                                                    
@@ -146,18 +194,109 @@
 
     @push('scripts')
     <script>
-        function cancelSubscription(subscriptionId) {
-            if (confirm('Are you sure you want to cancel this subscription?')) {
-                // Add your cancellation logic here
-                console.log('Canceling subscription:', subscriptionId);
+        const statusColors = {
+            'active': 'bg-green-100 text-green-800',
+            'trialing': 'bg-blue-100 text-blue-800',
+            'past_due': 'bg-yellow-100 text-yellow-800',
+            'canceled': 'bg-red-100 text-red-800',
+            'unpaid': 'bg-red-100 text-red-800',
+            'incomplete': 'bg-gray-100 text-gray-800',
+            'incomplete_expired': 'bg-gray-100 text-gray-800',
+            'paused': 'bg-orange-100 text-orange-800'
+        };
+
+        function showMessage(msg, type = 'success') {
+            const el = document.getElementById('flash-messages');
+            el.innerHTML = `<div class="mb-6 ${type === 'success' ? 'bg-green-50 border-green-200 text-green-800' : 'bg-red-50 border-red-200 text-red-800'} border rounded-md p-4">
+                <p class="text-sm font-medium">${msg}</p>
+            </div>`;
+            setTimeout(() => el.innerHTML = '', 5000);
+        }
+
+        function updateRow(id, data) {
+            const row = document.querySelector(`tr[data-subscription-id="${id}"]`);
+            if (!row || !data) return;
+            
+            const status = data.stripe_status;
+            const badge = row.querySelector('.status-badge');
+            badge.className = `status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[status] || 'bg-gray-100 text-gray-800'}`;
+            badge.textContent = status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            
+            const dateCell = row.querySelector('.next-billing-date');
+            if (dateCell) dateCell.textContent = data.ends_at || 'N/A';
+            
+            const actions = row.querySelector('.subscription-actions');
+            if (actions) {
+                actions.innerHTML = data.is_active 
+                    ? `<button class="text-red-600 hover:text-red-900" onclick="cancelSubscription(event, '${id}')">Cancel</button>`
+                    : `<button class="text-indigo-600 hover:text-indigo-900" onclick="resumeSubscription(event, '${id}')">Resume</button>`;
             }
         }
 
-        function resumeSubscription(subscriptionId) {
-            if (confirm('Are you sure you want to resume this subscription?')) {
-                // Add your resume logic here
-                console.log('Resuming subscription:', subscriptionId);
-            }
+        function cancelSubscription(event, id) {
+            if (!confirm('Are you sure you want to cancel this subscription? It will remain active until the end of the billing period.')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Canceling...';
+            
+            fetch(`/subscriptions/${id}/cancel`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    updateRow(id, data.subscription);
+                } else {
+                    showMessage(data.message || 'Failed to cancel subscription', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Cancel';
+                }
+            })
+            .catch(() => {
+                showMessage('An error occurred. Please try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Cancel';
+            });
+        }
+
+        function resumeSubscription(event, id) {
+            if (!confirm('Are you sure you want to resume this subscription?')) return;
+            
+            const btn = event.target;
+            btn.disabled = true;
+            btn.textContent = 'Resuming...';
+            
+            fetch(`/subscriptions/${id}/resume`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    updateRow(id, data.subscription);
+                } else {
+                    showMessage(data.message || 'Failed to resume subscription', 'error');
+                    btn.disabled = false;
+                    btn.textContent = 'Resume';
+                }
+            })
+            .catch(() => {
+                showMessage('An error occurred. Please try again.', 'error');
+                btn.disabled = false;
+                btn.textContent = 'Resume';
+            });
         }
     </script>
     @endpush
